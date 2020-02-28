@@ -5,8 +5,6 @@ package org.ferris.war.exploder;
  * @author Michael Remijan mjremijan@yahoo.com @mjremijan
  */
 public class Main {
-
-
     public static void main(String[] args) throws Exception
     {
         System.out.printf("=== Welcome to Ferris WAR Exploder ===%n");
