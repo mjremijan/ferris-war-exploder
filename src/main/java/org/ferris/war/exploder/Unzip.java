@@ -29,13 +29,16 @@ public class Unzip {
 
     protected void setDestinationDirectory(String destinationDirectoryPath) {
         destinationDirectory = new File(destinationDirectoryPath, zipFile.getName());
-        if (destinationDirectory.exists()) {
+        if (destinationDirectory.exists() && destinationDirectory.isDirectory()) {
             throw new RuntimeException(
                 String.format(
                     "The destination directory \"%s\" already exists.",
                      destinationDirectory.getPath()
                 )
             );
+        }
+        if (destinationDirectory.exists() && destinationDirectory.isFile()) {
+            destinationDirectory = new File(destinationDirectoryPath, zipFile.getName() + ".d");
         }
 
         mkdirs(destinationDirectory,
@@ -62,13 +65,16 @@ public class Unzip {
     }
 
     protected void unzip() throws Exception {
-
+        System.out.printf("%n=== Unipping %s ===%n%n", zipFile.getPath());
         try (ZipInputStream zip
             = new ZipInputStream(new FileInputStream(zipFile));
         ){
             for (ZipEntry z = zip.getNextEntry(); z != null; z = zip.getNextEntry()) {
-                System.out.printf("Handling %s%n", z.getName());
-                if (!z.isDirectory()) {
+                if (z.isDirectory()) {
+                    mkdirs(new File(destinationDirectory, z.getName()),
+                        "Failed to create a zip entry directory \"%s\""
+                    );
+                } else {
                     File zfile = new File(destinationDirectory, z.getName());
                     mkdirs(zfile.getParentFile(),
                          "Failed to create parent directory for zip entry file \"%s\"."
@@ -92,7 +98,7 @@ public class Unzip {
 
     protected File unzipEntry(ZipEntry z, ZipInputStream zip) throws Exception {
         File zfile = new File(destinationDirectory, z.getName());
-        System.out.printf("Unzipping to %s%n", zfile.getAbsolutePath());
+        System.out.printf("    %s%n", zfile.getAbsolutePath());
         try ( FileOutputStream out = new FileOutputStream(zfile)) {
             zip.transferTo(out);
         }
@@ -101,6 +107,9 @@ public class Unzip {
     }
 
     protected void mkdirs(File dir, String errorMessageFormat) {
+        if (dir.exists() && dir.isDirectory()) {
+            return;
+        }
         dir.mkdirs();
         if (!dir.exists()) {
             throw new RuntimeException(
